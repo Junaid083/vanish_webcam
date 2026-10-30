@@ -1,74 +1,84 @@
-# VanishCam — webcam disappearance effects
+# Vanish Webcam
 
-Video is processed on your computer. It is neither recorded nor sent to a server. The preview window and virtual camera show only the video and effects, without overlaid menus, instructions, or text.
+Disappear from your webcam with a hand gesture — live in Google Meet, Zoom, Teams or any app that lets you pick a camera.
 
-For step-by-step instructions in English and Italian, see the [user guide](USER_GUIDE_EN_IT.md).
+- **Normal** — make a ✌️ V sign and dissolve away; repeat it to fade back in.
+- **Naruto** — press your palms together and swap places with a log in a puff of smoke; repeat to return.
 
-## ☕ Buy me a coffee
+Everything runs locally. Video is never recorded or uploaded.
 
-If you like this project and want to support it, you can buy me a coffee through [PayPal](https://paypal.me/nicovic17) or [Revolut](https://revolut.me/nicoauriemma).
+## Setup
 
-## Download for Windows
+Tested on macOS (Apple Silicon). Needs **Python 3.11** — MediaPipe does not support newer versions yet.
 
-[Download VanishCam.exe]( https://nicoaauriemma.vercel.app/shop ) and double-click it to run the app. You do not need to install Python.
-
-The published EXE may predate the Particles and Goku modes. To use them now, run the local scripts or rebuild the EXE from these sources.
-
-## Getting started
-
-1. Double-click `AVVIA_LOCALE.bat`.
-2. In the start menu, choose **Normal Vanish**, **Naruto Vanish**, **Particles**, or **Goku** with the mouse or the `1`, `2`, `3`, and `4` keys.
-3. Step out of the camera frame for 4 seconds while the background is captured. The terminal tells you when you can step back in.
-
-**Normal Vanish:** Raise your index and middle fingers in a V sign. The dissolve starts as soon as the gesture is recognized and lasts about 3.6 seconds.
-
-**Particles:** Make the same V sign as in Normal Vanish. Your silhouette breaks into small colored fragments that drift sideways as if carried by the wind. The effect lasts about 2.1 seconds. It captures your silhouette once when the effect starts to keep the video smooth.
-
-**Goku:** Hold your index and middle fingers straight and together against your forehead for 1 second. Animated vertical comic-style lines run across your silhouette just before you teleport away and linger briefly afterward. To reappear, lower your hand, then repeat the gesture for another 1 second. The return uses the reverse effect. If you break the pose, the countdown starts over. `assets/teleport.MP3` plays on both disappearance and reappearance. The terminal shows the countdown for each gesture. The `V` and `R` keys are disabled in this mode: the gesture is the only way to disappear and reappear. No text is overlaid on the video.
-
-**Naruto Vanish:** Bring your palms together in front of the webcam, with your fingers side by side rather than interlaced. Keep both hands visible. As soon as the gesture is recognized, you vanish in a cloud of smoke and a wooden log appears, falls, and remains visible until you press `R`. No microphone is needed. Naruto mode uses `hand_landmarker.task` to track both hands. `assets/vanish.MP3` plays through your computer speakers when the disappearance starts, including when triggered with `V`. You can trigger it again after pressing `R`.
-
-To start a mode without the menu:
-
-```powershell
-local_app\AVVIA_LOCALE.bat --mode naruto
-local_app\AVVIA_LOCALE.bat --mode normal
-local_app\AVVIA_LOCALE.bat --mode particles
-local_app\AVVIA_LOCALE.bat --mode goku
+```bash
+python3.11 -m venv .venv
+.venv/bin/pip install -r requirements.txt
 ```
 
-## Virtual camera and OBS
+The MediaPipe models download automatically on first run.
 
-If [OBS Studio](https://obsproject.com/) is installed, the app automatically tries to open **OBS Virtual Camera**. The terminal shows the device name. Use `AVVIA_VIRTUAL.bat` to require a virtual camera. Select **OBS Virtual Camera** in the app that will receive the video. OBS's virtual camera must be stopped while this app is producing its output.
+## Run
 
-To use the effect in an OBS scene, run `AVVIA_OBS.bat`, add a **Window Capture** source, select **Webcam - Anteprima**, and then start the virtual camera from OBS. Alternatively, use [Unity Capture](https://github.com/schellingb/UnityCapture) as a separate virtual video source:
-
-```powershell
-local_app\AVVIA_VIRTUAL.bat --virtual-backend unitycapture
+```bash
+./vanish normal     # V sign mode
+./vanish naruto     # palms-together mode
+./vanish            # pick from a menu
 ```
 
-OBS has only one virtual camera. Do not use it as both an OBS input and output at the same time. See the [pyvirtualcam documentation](https://github.com/letmaik/pyvirtualcam#supported-virtual-cameras).
+Optional: `echo "alias vanish='$PWD/vanish'" >> ~/.zshrc` to run `vanish normal` from anywhere.
 
-## Controls
+1. **Step out of the frame** for 4 seconds while the background is captured — completely, or you'll be part of it.
+2. Come back and **gesture to vanish**. Lower your hand, then **gesture again to reappear**.
 
-- `SPACE`: capture a new background.
-- `R`: make the person reappear.
-- `V`: manually start the selected mode's effect.
-- `F`: toggle fullscreen.
-- `Q` or `ESC`: quit and release the cameras.
+The first run asks for camera access for your terminal — allow it.
 
-The `V` and `R` keys are disabled in Goku mode.
+## Keys
 
-You can change the camera, resolution, and maximum virtual-output FPS:
+Keys work when the **Webcam - Preview** window is focused. Gestures work even with it in the background.
 
-```powershell
-local_app\AVVIA_LOCALE.bat --camera 1 --width 1280 --height 720 --fps 30
+| Key | Action |
+| --- | --- |
+| `W` / `Space` | Recapture the background |
+| `V` | Vanish |
+| `R` | Reappear |
+| `F` | Fullscreen |
+| `Q` / `Esc` | Quit |
+
+## Use in meetings
+
+The app streams to **OBS Virtual Camera**. One-time setup:
+
+1. Install OBS: `brew install --cask obs`
+2. Open OBS → **Start Virtual Camera** → allow the extension in **System Settings → General → Login Items & Extensions → Camera Extensions**. Then stop it and quit OBS.
+
+Each call: start the app, then pick **OBS Virtual Camera** as the camera in Meet/Zoom (restart the browser if it isn't listed). Turn off the meeting app's own background blur.
+
+Your preview is mirrored; the meeting gets the true, unmirrored image so text reads correctly.
+
+## Options
+
+| Flag | Purpose |
+| --- | --- |
+| `--camera 1` | Use another webcam |
+| `--width 1280 --height 720` | Capture resolution |
+| `--fps 30` | Max virtual-camera FPS |
+| `--no-virtual-camera` | Preview window only |
+| `--no-mirror` | Don't mirror the preview |
+| `--gesture-debug` | Print gesture detection status |
+
+## Troubleshooting
+
+- **You're still visible after vanishing** — you were in the frame during background capture. Press `W` and step fully out.
+- **"OBS Virtual Camera is not installed"** — finish the OBS one-time setup above.
+- **Logs** — every run is recorded with timestamps in `logs/vanish-<date>.log`.
+
+## Tests
+
+```bash
+.venv/bin/python -m unittest
 ```
 
-To troubleshoot gesture recognition without adding text to the video, pass `--gesture-debug`. Diagnostic information appears only in the terminal.
+## Credits
 
-## Visual assets
-
-The [wooden log](assets/substitution_log.png) is an original illustration generated with ImageGen using the supplied image as a visual reference. Smoke is drawn in real time by `naruto_effect.py` so it follows the person's position and scales with the video. We also considered a [CC0 smoke sprite sheet](https://opengameart.org/content/smoke-sprite-sheet), but the procedural animation adapts better to dynamic positioning without an additional asset. No anime frames or assets are included in the project.
-
-Goku mode uses the [MediaPipe BlazeFace short-range model](https://github.com/google-ai-edge/mediapipe/blob/master/mediapipe/tasks/web/vision/README.md) to estimate the forehead position and `hand_landmarker.task` to track the fingers. The teleport's visual trace is drawn in code, without anime frames.
+Based on [Nicovic17/vanish_webcam](https://github.com/Nicovic17/vanish_webcam). The log sprite is an original generated illustration; smoke is drawn procedurally.
