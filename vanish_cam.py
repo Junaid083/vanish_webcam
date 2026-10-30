@@ -675,6 +675,7 @@ _APP_NAP_ACTIVITY = None
 
 def self_test() -> int:
     """Check bundled resources and model initialization without opening a webcam."""
+    download_models()
     required = (SEGMENTER_MODEL, GESTURE_MODEL, HAND_MODEL, SOUND_PATH)
     missing = [path.name for path in required if not path.is_file()]
     if missing:
