@@ -1,0 +1,12 @@
+#!/bin/zsh
+# VanishCam launcher: `vanish normal`, `vanish naruto`, or `vanish` for the menu.
+# Extra flags pass through, e.g. `vanish normal --no-mirror`.
+app=${0:A:h}
+mode=()
+[[ -n $1 && $1 != -* ]] && { mode=(--mode "$1"); shift }
+cd "$app" || exit 1
+# Keep only the app's own messages: drop MediaPipe/TFLite info and warnings, its
+# usage-stats upload errors and the harmless duplicate-SDL warnings. Real errors still show.
+noise='^([IW][0-9]{4} |INFO: |objc\[|=== Source Location|wireless/)|clearcut'
+GLOG_minloglevel=2 exec .venv/bin/python vanish_cam.py "${mode[@]}" "$@" \
+  2> >(/usr/bin/grep -Ev --line-buffered "$noise" >&2)
