@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 import numpy as np
 
-from local_app import vanish_cam as app
+import vanish_cam as app
 
 
 def arguments(**overrides):
@@ -23,7 +23,7 @@ class VirtualCameraTests(unittest.TestCase):
     def test_bgr_format_and_actual_frame_dimensions(self):
         camera = Mock(device="OBS Virtual Camera")
         module = SimpleNamespace(Camera=Mock(return_value=camera), PixelFormat=SimpleNamespace(BGR="BGR"))
-        with patch.dict("sys.modules", pyvirtualcam=module):
+        with patch.dict("sys.modules", pyvirtualcam=module), patch.object(app, "log"):
             self.assertIs(app.open_virtual_camera(arguments(), 640, 480), camera)
         module.Camera.assert_called_once_with(
             width=640, height=480, fps=30.0, fmt="BGR", backend=None, device=None,
@@ -32,7 +32,7 @@ class VirtualCameraTests(unittest.TestCase):
     def test_unavailable_driver_auto_falls_back_but_explicit_mode_fails(self):
         module = SimpleNamespace(Camera=Mock(side_effect=RuntimeError("driver missing")),
                                  PixelFormat=SimpleNamespace(BGR="BGR"))
-        with patch.dict("sys.modules", pyvirtualcam=module), patch("builtins.print"):
+        with patch.dict("sys.modules", pyvirtualcam=module), patch("builtins.print"), patch.object(app, "log"):
             self.assertIsNone(app.open_virtual_camera(arguments(), 640, 480))
             for options in (dict(virtual_camera=True), dict(virtual_backend="obs")):
                 with self.assertRaisesRegex(RuntimeError, "driver missing"):
@@ -88,6 +88,7 @@ class VideoLoopTests(unittest.TestCase):
             mocks.enter_context(patch.object(app.cv2, "waitKey", side_effect=keys))
             mocks.enter_context(patch.object(app.cv2, "putText", side_effect=AssertionError("Overlay vietato")))
             mocks.enter_context(patch("builtins.print"))
+            mocks.enter_context(patch.object(app, "log"))
             if send_error is None:
                 self.assertEqual(app.run(), 0)
             else:
